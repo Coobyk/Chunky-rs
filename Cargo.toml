@@ -1,0 +1,19 @@
+[package]
+name = "horizon-mod-chunky"
+version = "0.2.0"
+edition = "2024"
+license = "MIT"
+publish = false
+description = "The Chunky chunk pregenerator, ported to Horizon as a native mod."
+
+# The mod's logic and its tests: the same file the bundle adds to the game.
+[lib]
+path = "mixins/chunky/runtime.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.test]
+# The game's own dev profile; keep the tests quick.
+opt-level = 1

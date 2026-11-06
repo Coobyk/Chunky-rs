@@ -1,0 +1,99 @@
+# Chunky (Chunky-rs): the Chunky chunk pregenerator, ported to Horizon as a
+# native mod. The sweep engine is Horizon's own band pregeneration (the same
+# one `/pregen` runs); the mod adds Chunky's command surface, its settings
+# and its saved tasks that continue when the world opens again.
+[mod]
+id = "chunky"
+version = "0.2.0"
+priority = 100
+
+# The commit the mod was built and tested on: the latest Nightly the
+# instance plays (nightly-2026-11-05-66f3981).
+[compatibility]
+horizon_revision = "66f3981f522b24c250b21523a70080965b940424"
+
+# The sweep engine, the task state, the command parser and the persistence:
+# no game code, so the crate's own tests run on it (`cargo test`).
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "chunky"
+source = "runtime.rs"
+
+# The edges to the game: the commands, the driver and the lifecycle.
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "chunky_glue"
+source = "glue.rs"
+
+[[injection]]
+id = "register"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_register_commands"
+helper = "register.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<crate::game::native_server::NativeCommand>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "command"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_perform_command"
+helper = "command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "&crate::game::native_server::NativeServerPlayer", value = "player" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "console"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_perform_console_command"
+helper = "console.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "level_tick"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_level_tick_pre"
+helper = "level_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "dimension", ty = "&str", value = "dimension" },
+]
+
+[[injection]]
+id = "level_tick_post"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_level_tick_post"
+helper = "level_tick_post.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "dimension", ty = "&str", value = "dimension" },
+]
+
+[[injection]]
+id = "lifecycle"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_world_lifecycle"
+helper = "lifecycle.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "phase", ty = "crate::game::native_lifecycle::WorldPhase", value = "phase" },
+]
+
+[[injection]]
+id = "list"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_mods"
+helper = "list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
